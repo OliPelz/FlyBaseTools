@@ -18,3 +18,11 @@ nytprof.out
 *.o
 *.bs
 /_eumm/
+/t/*.gff
+/t/*.fasta
+/t/*.fas
+/t/*.2bit
+/t/*.txt
+*.swp
+/t/*.swp
+/t/\.*.swp
