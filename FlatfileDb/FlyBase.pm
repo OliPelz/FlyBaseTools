@@ -46,7 +46,7 @@ sub parseAllGffFile {
     my @typesA = @{$_[1]};
     my $FH;
     open($FH, "<", $filename) || die "cannot open input file $filename";
-    if(!defined(@typesA) || scalar @typesA < 1) {
+    if(scalar @typesA < 1) {
        warn "Parameter 2 missing or empty: supply a list of gff FlyBase types to filter for";
        return;
     }
