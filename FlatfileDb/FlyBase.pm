@@ -39,6 +39,19 @@ sub new {
 # 211000022278158       FlyBase rRNA    592     1036    .       +       .       ID=FBtr0114187;Name=CR40502-RA;Parent=FBgn0085737;Dbxref=FlyBase_Annotation_IDs:CR40502-RA,REFSEQ:NR_004043;score_text
 #211000022278158	FlyBase	gene	592	1036	.	+	.	ID=FBgn0085737;Name=CR40502;Alias=FBan0040502;Ontology_term=SO:0000011,SO:0000087,SO:0000573;Dbxref=FlyBase_Annotation_IDs:CR40502,EntrezGene:5740665,GenomeRNAi:5740665
 
+# build a regular expression dynamically, which checks that the type column
+# is one of the type array elements
+sub buildTypeRegExp {
+    my $self = shift;
+    my @typesA = @{$_[0]};
+# for building the regular expression we need to know which column the type column is
+    my $regexp = "^";
+    for(my $i = 0; $i < $self->{"_fields"}->{"type"}; $i++) {
+       $regexp .= "[^\t]+\t";
+    }
+    return $regexp .  "(". join("|", @typesA) . ")"; 
+    
+}
 sub parseAllGffFile {
     my $self = shift;
     my $filename = $_[0];
@@ -52,6 +65,9 @@ sub parseAllGffFile {
     }
     my $line;
     my $f = $self->{"_fields"};
+# build regexp for faster checks
+    my $typeRegExp = join("|", @typesA);
+    
     while($line = <$FH>) {
 #skip lines starting with a #
        next if $line =~ /^#/;
