@@ -1,16 +1,26 @@
 use strict;
 use warnings;
 
-use Test::More;
+use Test::More 'no_plan';
+
 
 use FlatfileDb::FlyBase;
 
 my $fbt = FlatfileDb::FlyBase->new();
 
-my $regex = $fbt->buildTypeRegExp(["exon"]);
+# Testing method buildTypeRegExp
 
-is($regex, "^[^\\t]+\\t(exon)", "check if dynamic regular expression building method is correct $regex");
+# first make the test more independant of possible hardcode changes
+$fbt->{"_fields"}->{"type"} = 1;
+my $regex = $fbt->buildTypeRegExp(["exon"]);
+is($regex, "^[^\\t]+\\t(exon)\\t", "check if dynamic regular expression building method is correct $regex");
 
 $regex = $fbt->buildTypeRegExp(["exon", "mRNA"]);
+is($regex, "^[^\\t]+\\t(exon\|mRNA)\\t", "check if dynamic regular expression building method is correct $regex");
 
-is($regex, "^[^\\t]+\\t(exon\|mRNA)", "check if dynamic regular expression building method is correct $regex");
+$regex = $fbt->buildTypeRegExp(["exon", "mRNA", "rRNAiX", "rRNAi"]);
+is($regex, "^[^\\t]+\\t(exon\|mRNA\|rRNAiX\|rRNAi)\\t", "check if dynamic regular expression building method is correct $regex");
+
+$fbt->{"_fields"}->{"type"} = 2;
+$regex = $fbt->buildTypeRegExp(["exon", "mRNA", "rRNAiX", "rRNAi"]);
+is($regex, "^[^\\t]+\\t[^\\t]+\\t(exon\|mRNA\|rRNAiX\|rRNAi)\\t", "check if dynamic regular expression building method is correct $regex");

@@ -14,7 +14,8 @@ First step is to define the following environment variables
 ```bash
 export FLYBRELVER="6.09"
 export FLYBRELDAT="2016_01"
-	```
+```
+
 
 To run tests, you need to download some flatfiles:
 ```bash
