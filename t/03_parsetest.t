@@ -7,8 +7,13 @@ use FlatfileDb::FlyBase;
 
 my $fbt = FlatfileDb::FlyBase->new();
 
-my $flyBaseVer  = $ENV{FLYBRELVER} || die "environment variable FLYBRELVER not set";
-my $flyBaseDate = $ENV{FLYBRELDAT} || die "environment variable FLYBRELDAT not set";
+my $flyBaseVer  = $ENV{FLYBRELVER};
+my $flyBaseDate = $ENV{FLYBRELDAT};
+
+is( defined($flyBaseVer), 1,
+    "check if env variable is set FLYBRELVER 'FlyBase Version number'" );
+is( defined($flyBaseDate), 1,
+    "check if env variable is set FLYBRELDAT 'FlyBase version date'" );
 
 # for this big file parsing we will show some progress
 #$fbt->{"debugOutput"} = 1;
@@ -56,20 +61,28 @@ if ( $flyBaseVer eq "6.09" ) {
         1, "linked nodes datastructure must be defined" );
     my %linkedChecks;
     $linkedChecks{"FBgn0085822"} = 0;
-    $linkedChecks{"FBtr0332337"} = 0;
-    my $hsh = $ds->{"_gff"}->{"linkedNodes"}->{"rRNA"};
+    $linkedChecks{"FBgn0085777"} = 0;
+    my $hsh = $ds->{"_gff"}->{"linkedNodes_type"}->{"rRNA"};
     is(defined($hsh->{"FBtr0114280"}), 1, "linked node must contain FBtr id");
-    foreach my $ar ( @{ $hsh->{"FBtr0114280"} } ) {
-        if ( $ar->[0] eq "FBgn0085822" ) {
-            $linkedChecks{"FBgn0085822"} = 1;
-        }
-        if ($ar->[0] eq "FBtr0332337") {
-            $linkedChecks{"FBtr0332337"} = 0;
-        }
+    if ($hsh->{"FBtr0114280"}->[0] eq "FBgn0085822" ) {
+       $linkedChecks{"FBgn0085822"} = 1;
+    }
+    if ($hsh->{"FBtr0114228"}->[0] eq "FBgn0085777" ) {
+       $linkedChecks{"FBgn0085777"} = 1; 
+    }
+    $hsh = $ds->{"_gff"}->{"linkedNodes"};
+    is(defined($hsh->{"FBtr0114280"}), 1, "linked node must contain FBtr id");
+    if ($hsh->{"FBtr0114280"}->[0] eq "FBgn0085822" ) {
+       $linkedChecks{"FBgn0085822"} = 1;
+    }
+    if ($hsh->{"FBtr0114228"}->[0] eq "FBgn0085777" ) {
+       $linkedChecks{"FBgn0085777"} = 1;
     }
 
+
+
     # validate all linked nodes checks
-    foreach my $fbgn ( keys %fbgnChecks ) {
+    foreach my $fbgn ( keys %linkedChecks ) {
         is( $linkedChecks{$fbgn}, 1,
             "check if $fbgn could be found in the datastructure" );
     }
@@ -78,6 +91,14 @@ if ( $flyBaseVer eq "6.09" ) {
     $ds = $fbt->parseAllGffFile( "./t/dmel-all-r$flyBaseVer.gff", ["gene"] );
     is( defined( $ds->{"_gff"}->{"endNodes"} ),
         1, "end nodes datastructure must be defined" );
-
+    my %endNodesChecks;
+    $endNodesChecks{""} = 0;
+    $endNodesChecks{""} = 0;
+    $hsh = $ds->{"_gff"}->{"endNodes"};
+    is(defined($hsh->{"FBgn0031443"}), 1, "end node must contain FBgn id");
+    is(defined($hsh->{"FBgn0260451"}), 1, "end node must contain FBgn id");  
 }
+
+
+
 

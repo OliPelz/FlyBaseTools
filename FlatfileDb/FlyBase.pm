@@ -27,6 +27,14 @@ sub new {
     # debug output, please note this has a negative impact on the runtime
     # as we will count the line numbers in the input file first
     $self->{_debugOutput} = 0;
+    
+    # store complete information field in the datastructure
+    # this takes up a lot of RAM, so by default we will disable it
+    # but if you need to further process additional information
+    # do enable it
+    # TODO: not implemented yet
+    $self->{_storeInfoField} = 0;
+
     return bless $self, $class;
 }
 
@@ -47,7 +55,11 @@ sub new {
 sub buildTypeRegExp {
     my $self   = shift;
     my @typesA = @{ $_[0] };
-
+     
+    if(scalar @typesA < 1) {
+       return undef;
+    }
+   
 # for building the regular expression we need to know which column the type column is
     my $regexp = "^";
     for ( my $i = 0 ; $i < $self->{"_fields"}->{"type"} ; $i++ ) {
@@ -57,22 +69,19 @@ sub buildTypeRegExp {
 
 }
 
+# filter parameter filters for specific "type" lines which helps in faster parsing
+# if you want to use all lines, submit the [] empty value here
 sub parseAllGffFile {
     my $self     = shift;
     my $filename = $_[0];
 
-    # the types to filter
+    # the types to filter, if submit the empty array [], there will be no fiter
     my @typesA = @{ $_[1] };
 
     # the ds to return
     my $ds = {};
     my $FH;
     open( $FH, "<", $filename ) || die "cannot open input file $filename";
-    if ( scalar @typesA < 1 ) {
-        warn
-"Parameter 2 missing or empty: supply a list of gff FlyBase types to filter for";
-        return;
-    }
     my $line;
     my $lineCnt;
     my $totalCnt;
@@ -95,15 +104,16 @@ sub parseAllGffFile {
 
         #skip lines starting with a #
         next if $line =~ /^#/;
-        next if $line !~ /$typeRegExp/;
+	next if $line =~ /^>/;
+        next if defined($typeRegExp) && $line !~ /$typeRegExp/;
         my @a      = split( "\t", $line );
+        next if (scalar @a < $f->{info} + 1);
         my $chrom  = $a[ $f->{"chrom"} ];
         my $type   = $a[ $f->{"type"} ];
         my $start  = $a[ $f->{"start"} ];
         my $stop   = $a[ $f->{"stop"} ];
         my $strand = $a[ $f->{strand} ];
         my $info   = $a[ $f->{info} ];
-
 #  differentiate between three different kind of nodes: startNodes (e.g. mRNA, exons, rRNA - have only parent)
 #  linkedNodes (have ID and parent), endNodes (have only ID)
 # start node have only Parent information
@@ -114,25 +124,73 @@ sub parseAllGffFile {
                 push @{ $ds->{_gff}->{"startNodes"}->{$type} },
                   [ $pId, $chrom, $start, $stop, $strand ];
             }
+	    # TODO: if needed store the info field as well
+	    # Pseudo code:
+	    # if $self->{_storeInfoField} then push @@{ $ds->{_gff}->{"startNodes"}->{$type} }, $info
         }
 
-        # linked nodes or intermediate nodes have both ID and Parent information
+# linked nodes or intermediate nodes have both ID and Parent information
         elsif ( $info =~ /^ID=([^;]+).*Parent=([^;]+)/ ) {
             my $id  = $1;
             my $pId = $2;
-            push @{ $ds->{_gff}->{"linkedNodes"}->{$type}->{$id} },
-              [ $pId, $chrom, $start, $stop, $strand ];
-
+            $ds->{_gff}->{"linkedNodes"}->{$id}  = 
+              [ $pId, $type, $chrom, $start, $stop, $strand ];
+	    #TODO: # if $self->{_storeInfoField} then push @@{ $ds->{_gff}->{"startNodes"}->{$type} }, $info
+	    
+            # this is a helper structure as this is requested lot of time: get the linkedNodes by types
+            $ds->{_gff}->{"linkedNodes_type"}->{$type}->{$id} = $ds->{_gff}->{"linkedNodes"}->{$id}; 
         }
 
-        # end nodes have only ID information
-        elsif ( $info =~ /ID=(.+);/ && $info !~ /Parent=/ ) {
+# end nodes have only ID information
+        elsif ( $info =~ /ID=([^;]+)/ && $info !~ /Parent=/ ) {
             my $id = $1;
-            push @{ $ds->{_gff}->{"endNodes"}->{$type}->{$id} },
-              [ $chrom, $start, $stop, $strand ];
+            $ds->{_gff}->{"endNodes"}->{$id} = 
+              [ $type, $chrom, $start, $stop, $strand ];
+            # TODO: # if $self->{_storeInfoField} then push @@{ $ds->{_gff}->{"startNodes"}->{$type} }, $info
 
         }
     }
     return $ds;
 }
+# This method traverses the Gff tree and prints out the first and last node  
+# expects a datastructure (ds) coming from parseAllGffFile sub
+# traverseGffTree($ds, "gene") would traverse the gff datastructure recursively
+# and stop when hitting an associated gene for every start node
+# the result would be e.g. exon1 -> associated gene1, exon2 ->associated gene2
+sub printTraverseEndNodeGffTree {
+   my $self     = shift;
+   my $ds = $_[0];
+## the "end" node types to filter
+   my $targetEndNode = $_[1];
+
+# for every start node
+   foreach my $type ( @{ $ds->{"_gff"}->{"startNodes"} } ) {
+      foreach my $ar ( @{ $ds->{"_gff"}->{"startNodes"}->{$type} } ) {
+          print join("\t", @$ar);
+          my $ar2 = $self->returnLeafElementTraverseGffTree($ar->[0], $ds);
+          if(defined($ar2)) {
+             if($ar2->[1] eq "gene") {
+                print "\tassociated gene: " . $ar2->[0] . "\n";
+             }
+          }
+      }
+   }
+}
+# this works recursively and returns the last leaf element of a root element
+sub returnLeafElementTraverseGffTree {
+   my $self = shift;
+   my $id = $_[0];
+   my $ds = $_[1];
+
+   if(defined($ds->{"_gff"}->{"linkedNodes"}->{$id})) {
+      $self->returnLeafElementTraverseGffTree($ds->{"_gff"}->{"linkedNodes"}->{$id}->[0], $ds);
+   }
+   elsif(defined($ds->{"_gff"}->{"endNodes"}->{$id})) {
+      return $id;
+   }
+   else {
+      return undef;
+   }
+}
+
 1;

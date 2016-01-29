@@ -25,7 +25,7 @@ gunzip ./t/dmel-all-r${FLYBRELVER}.gff.gz
 ```
 Now run the full test suite using:
 ```bash
-prove ./t/runTestSuite.pl
+./t/runTestSuite.sh
 
 ```
 

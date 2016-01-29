@@ -33,3 +33,10 @@ is(
     "^[^\\t]+\\t[^\\t]+\\t(exon\|mRNA\|rRNAiX\|rRNAi)\\t",
     "check if dynamic regular expression building method is correct $regex"
 );
+
+# test with empty array = which means do not filter by anything
+$fbt->{"_fields"}->{"type"} = 1;
+$regex = $fbt->buildTypeRegExp( [] );
+is(!defined($regex), 1, "empty regexp array argument should result in undef value");
+
+
