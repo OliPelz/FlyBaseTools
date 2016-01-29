@@ -120,10 +120,8 @@ sub parseAllGffFile {
         if ( $info !~ /ID=/ && $info =~ /Parent=(.+)\n/ ) {
             my $pIds = $1;
             my @a = split( ",", $pIds );
-            foreach my $pId (@a) {
-                push @{ $ds->{_gff}->{"startNodes"}->{$type} },
-                  [ $pId, $chrom, $start, $stop, $strand ];
-            }
+            push @{ $ds->{_gff}->{"startNodes"}->{$type} },
+               [ $chrom, $start, $stop, $strand, \@a ];
 	    # TODO: if needed store the info field as well
 	    # Pseudo code:
 	    # if $self->{_storeInfoField} then push @@{ $ds->{_gff}->{"startNodes"}->{$type} }, $info

@@ -26,3 +26,5 @@ my $startNodeId = "FBtr0077980";
 my $id = $fbt->returnLeafElementTraverseGffTree($startNodeId, $ds);
 is($id, "FBgn0024314", "must print out the correct associated gene $id" );
 
+
+

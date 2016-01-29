@@ -35,16 +35,19 @@ if ( $flyBaseVer eq "6.09" ) {
     $fbtrChecks{"FBtr0344858"} = 0;
     is( defined( $ds->{"_gff"}->{"startNodes"}->{"exon"} ),
         1, "exon datastructure must be defined" );
-    my $aRs = $ds->{"_gff"}->{"startNodes"}->{"exon"};
+    my $aRs = $ds->{"_gff"}->{"startNodes"}->{"exon"}; 
     foreach my $aR (@$aRs) {
-        if ( $aR->[0] eq "FBtr0114187" ) {
-            $fbtrChecks{"FBtr0114187"} = 1;
-        }
-        if ( $aR->[0] eq "FBtr0091491" ) {
-            $fbtrChecks{"FBtr0091491"} = 1;
-        }
-        if ( $aR->[0] eq "FBtr0344858" ) {
-            $fbtrChecks{"FBtr0344858"} = 1;
+        my $a = $aR->[4];
+        foreach my $fbtr (@$a) {
+          if ( $fbtr eq "FBtr0114187" ) {
+              $fbtrChecks{"FBtr0114187"} = 1;
+          }
+          if ( $fbtr eq "FBtr0091491" ) {
+              $fbtrChecks{"FBtr0091491"} = 1;
+          }
+          if ( $fbtr eq "FBtr0344858" ) {
+              $fbtrChecks{"FBtr0344858"} = 1;
+          }
         }
 
     }
