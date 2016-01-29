@@ -7,6 +7,9 @@ use FlatfileDb::FlyBase;
 
 my $fbt = FlatfileDb::FlyBase->new();
 
+# for this big file parsing we will show some progress
+$fbt->{"debugOutput"} = 1;
+
 
 # test recursive tree fetch method
  
