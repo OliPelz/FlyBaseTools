@@ -54,20 +54,23 @@ if ( $flyBaseVer eq "6.09" ) {
     $ds = $fbt->parseAllGffFile( "./t/dmel-all-r$flyBaseVer.gff", ["rRNA"] );
     is( defined( $ds->{"_gff"}->{"linkedNodes"} ),
         1, "linked nodes datastructure must be defined" );
-    my %fbgnChecks;
-    $fbgnChecks{"FBgn0085822"} = 0;
-
+    my %linkedChecks;
+    $linkedChecks{"FBgn0085822"} = 0;
+    $linkedChecks{"FBtr0332337"} = 0;
     my $hsh = $ds->{"_gff"}->{"linkedNodes"}->{"rRNA"};
     is(defined($hsh->{"FBtr0114280"}), 1, "linked node must contain FBtr id");
     foreach my $ar ( @{ $hsh->{"FBtr0114280"} } ) {
         if ( $ar->[0] eq "FBgn0085822" ) {
-            $fbgnChecks{"FBgn0085822"} = 1;
+            $linkedChecks{"FBgn0085822"} = 1;
+        }
+        if ($ar->[0] eq "FBtr0332337") {
+            $linkedChecks{"FBtr0332337"} = 0;
         }
     }
 
     # validate all linked nodes checks
     foreach my $fbgn ( keys %fbgnChecks ) {
-        is( $fbgnChecks{$fbgn}, 1,
+        is( $linkedChecks{$fbgn}, 1,
             "check if $fbgn could be found in the datastructure" );
     }
 
