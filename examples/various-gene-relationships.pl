@@ -54,7 +54,7 @@ foreach my $type (keys %intermediateNode_features) {
    foreach my $id (keys %$ftrs) {
       my $ar = $ftrs->{$id}; 
       my ($pId, $type, $chrom, $start, $stop, $strand ) = @$ar;
-      print(join("\t", ($type, $pId, $chrom, $start, $stop, $strand)));
+      print(join("\t", ($type, $chrom, $start, $stop, $strand)));
       my $rootId = $fbt->returnLeafElementTraverseGffTree($pId, $ds);
       my $rootDs = defined($ds->{_gff}->{"endNodes"}->{$rootId}) ? $ds->{_gff}->{"endNodes"}->{$rootId} : [];
       if($rootDs->[0] eq "gene") {
