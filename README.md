@@ -29,16 +29,61 @@ Now run the full test suite using:
 
 ```
 
-### Start parsing
+### Init new parsing session
+```perl
+use strict;
+use warnings;
+ 
+use Test::More 'no_plan';
+use FlatfileDb::FlyBase;
+ 
+my $fbt = FlatfileDb::FlyBase->new();
 
+```
+### start parsing everything (Note: takes massive RAM amount)
+```perl
+my $ds = $fbt->parseAllGffFile( "./t/dmel-all-r$flyBaseVer.gff", [] );
+```
 
 ### Start answering biological questions examples
 
-#### Get all exons
+#### Get all exon objects
+```perl
+my $exons = $ds->{_gff}->{"startNodes"}->{"exon"}
+```
 
 #### Get all rRNAs
+```perl
+my $rRna = $ds->{_gff}->{"linkedNodes_type"}->{"rRNA"}
+```
 
-#### Get all genes for all exons
+#### Print all genes for all exons, UTR's
+```perl
+my %startNode_features = (
+  exon => '',
+  five_prime_UTR => '',
+  three_prime_UTR => '',
+);
+foreach my $type (keys %startNode_features) {
+   my $ars = $ds->{_gff}->{"startNodes"}->{$type};
+   foreach my $ar (@$ars) {
+      my ($chrom, $start, $stop, $strand, $id_ar ) = @$ar;
+      my $found = 0;
+      print(join("\t", ($chrom, $start, $stop, $strand)));
+      my @rootIds;
+      foreach my $id (@$id_ar) {
+         my $rootId = $fbt->returnLeafElementTraverseGffTree($id, $ds);
+         my $rootDs = $ds->{_gff}->{"endNodes"}->{$rootId};
+         if($rootDs->[0] eq "gene") {
+             join(@rootIds, $rootId);
+         } 
+     }
+      print("\t" . join(",", @rootIds). "\n");
+  }
+} 
+```
+
+
 
 #### Make it faster
 

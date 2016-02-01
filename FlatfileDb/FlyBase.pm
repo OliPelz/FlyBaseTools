@@ -117,7 +117,7 @@ sub parseAllGffFile {
 #  differentiate between three different kind of nodes: startNodes (e.g. mRNA, exons, rRNA - have only parent)
 #  linkedNodes (have ID and parent), endNodes (have only ID)
 # start node have only Parent information
-        if ( $info !~ /ID=/ && $info =~ /Parent=(.+)\n/ ) {
+        if ( $info !~ /ID=/ && $info =~ /Parent=([^;]+)\n/ ) {
             my $pIds = $1;
             my @a = split( ",", $pIds );
             push @{ $ds->{_gff}->{"startNodes"}->{$type} },
