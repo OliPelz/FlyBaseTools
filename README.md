@@ -30,3 +30,23 @@ Now run the full test suite using:
 ```
 
 ### Start parsing
+
+
+### Start answering biological questions examples
+
+#### Get all exons
+
+#### Get all rRNAs
+
+#### Get all genes for all exons
+
+#### Make it faster
+
+### Documentation
+
+##### FlyBase all-in-one GFF file
+FlyBase introduced a new file format starting with the Dmel6 release. It contains parent-child relationships between different knd of biological
+object classes such as exon-rRNA-gene. These relationships is modelled using "Parent=", "ID=" links in the GFF file.
+Therefore the datastructure in the memory to construct these relationships is quite bit and takes lots of memory.
+I use a recursive algorithm approach to traverse the tree and provide solutions to common biological questions such as:
+"get all the associated genes for a single exon"  
