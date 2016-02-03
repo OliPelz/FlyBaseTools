@@ -1,5 +1,5 @@
 # this script prints out all the exon, utr, pre_miRNA, miRNA, snoRNA, rRNA, ncRNA
-# tRNA, snRNA TO gene relationships there is in the drosophila dmel-all-rXXX gff file
+# tRNA, snRNA TO gene relationships there is in a given drosophila dmel-all-rXXX gff file
 use strict;
 use warnings;
 use FlatfileDb::FlyBase;

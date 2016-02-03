@@ -10,14 +10,13 @@ git clone git@github.com:OliPelz/FlyBaseTools.git
 ### Run tests
 FlyBaseTools has been tested against FlyBase flatfile databases release 6.09/FB2016_01
 
-First step is to define the following environment variables
+First step is to define the following environment variables on the command line
 ```bash
 export FLYBRELVER="6.09"
 export FLYBRELDAT="2016_01"
 ```
 
-
-To run tests, you need to download some flatfiles:
+To run the tests, you need to download some flatfiles:
 ```bash
 cd ./FlyBaseTools
 eval "curl -o ./t/dmel-all-r${FLYBRELVER}.gff.gz ftp://ftp.flybase.net/genomes/Drosophila_melanogaster/dmel_r${FLYBRELVER}_FB${FLYBRELDAT}/gff/dmel-all-r${FLYBRELVER}.gff.gz"
@@ -29,18 +28,17 @@ Now run the full test suite using:
 
 ```
 
-### Init new parsing session
+### To init new parsing session (object) for a given dmel-all gff file
 ```perl
-use strict;
-use warnings;
- 
-use Test::More 'no_plan';
 use FlatfileDb::FlyBase;
  
 my $fbt = FlatfileDb::FlyBase->new();
 
+my $flyBaseVer  = $ENV{FLYBRELVER};
+my $flyBaseDate = $ENV{FLYBRELDAT};
+ 
 ```
-### start parsing everything (Note: takes massive RAM amount)
+### start parsing the gff file (Note: takes massive RAM amount)
 ```perl
 my $ds = $fbt->parseAllGffFile( "./t/dmel-all-r$flyBaseVer.gff", [] );
 ```
@@ -59,34 +57,70 @@ my $rRna = $ds->{_gff}->{"linkedNodes_type"}->{"rRNA"}
 
 #### Print all genes for all exons, UTR's
 ```perl
-my %startNode_features = (
-  exon => '',
-  five_prime_UTR => '',
-  three_prime_UTR => '',
+my %startNode_features = ( 
+  exon => '', 
+  five_prime_UTR => '', 
+  three_prime_UTR => '', 
 );
 foreach my $type (keys %startNode_features) {
    my $ars = $ds->{_gff}->{"startNodes"}->{$type};
    foreach my $ar (@$ars) {
       my ($chrom, $start, $stop, $strand, $id_ar ) = @$ar;
-      my $found = 0;
-      print(join("\t", ($chrom, $start, $stop, $strand)));
+      print(join("\t", ($type, $chrom, $start, $stop, $strand)));
       my @rootIds;
       foreach my $id (@$id_ar) {
          my $rootId = $fbt->returnLeafElementTraverseGffTree($id, $ds);
-         my $rootDs = $ds->{_gff}->{"endNodes"}->{$rootId};
-         if($rootDs->[0] eq "gene") {
-             join(@rootIds, $rootId);
-         } 
-     }
+         if(!defined($rootId)) {
+           print "debug me"
+         }
+         my $rootDs = defined($ds->{_gff}->{"endNodes"}->{$rootId}) ? $ds->{_gff}->{"endNodes"}->{$rootId} : []; 
+         if(scalar @$rootDs > 0 && $rootDs->[0] eq "gene") {
+             push(@rootIds, $rootId);
+         }
+      }   
       print("\t" . join(",", @rootIds). "\n");
   }
 } 
 ```
+#### Print all genes for miRNA etc. (intermediate biological objects)
+```perl
+my %intermediateNode_features = ( 
+    pre_miRNA => '', 
+    miRNA => '', 
+    snoRNA => '', 
+    rRNA => '', 
+    ncRNA => '', 
+    tRNA => '', 
+    snRNA => ''
+);
+foreach my $type (keys %intermediateNode_features) {
+   my $ftrs = $ds->{_gff}->{"linkedNodes_type"}->{$type};
+   foreach my $id (keys %$ftrs) {
+      my $ar = $ftrs->{$id};
+      my ($pId, $type, $chrom, $start, $stop, $strand ) = @$ar;
+      print(join("\t", ($type, $chrom, $start, $stop, $strand)));
+      my $rootId = $fbt->returnLeafElementTraverseGffTree($pId, $ds);
+      my $rootDs = defined($ds->{_gff}->{"endNodes"}->{$rootId}) ? $ds->{_gff}->{"endNodes"}->{$rootId} : [];
+      if($rootDs->[0] eq "gene") {
+         print("\t" . join(",", $rootId . "\n"));
+      }
+   }
+}
 
+```
 
 
 #### Make it faster
-
+To make it faster you can set a filter. This will be set by using an array parameter with all the biological
+types you want to extract into a datastructure. 
+Please note and be aware that if you want to get rootNodes from the extracted datastructure, you must take into
+account any intermediate types along the tree traversing. For example if you want to get all the genes for all given
+exons, you cannot just filter the datastructure by ['exon', 'gene'] but you need to add also the intermediate 'rRNA'
+because exon->rRNA->gene
+As said before if you want to extract all genes for given exons you would use the following structure
+```perl
+my $ds = $fbt->parseAllGffFile( "./t/dmel-all-r$flyBaseVer.gff", ["exon", "rRNA", "gene"] );
+```
 ### Documentation
 
 ##### FlyBase all-in-one GFF file
